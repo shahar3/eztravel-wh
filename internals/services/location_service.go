@@ -4,9 +4,10 @@ import (
 	"context"
 	"eztravel-wh/internals/models"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"strings"
 )
 
@@ -19,7 +20,7 @@ const (
 )
 
 type LocationService interface {
-	GetLocation() (*models.Location, error)
+	GetLocation(string) (*models.Location, error)
 	GetLocationsAutoComplete(string) []*models.AutocompleteOption
 	Init()
 }
@@ -38,9 +39,11 @@ func NewLocationService(locationsCollection *mongo.Collection, ctx context.Conte
 }
 
 func (ls *LocationServiceImplementation) Init() {
+	findOptions := options.FindOptions{}
+	opt := *findOptions.SetLimit(100)
 	query := bson.M{}
 
-	cursor, err := ls.locationsCollection.Find(ls.ctx, query)
+	cursor, err := ls.locationsCollection.Find(ls.ctx, query, &opt)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -50,45 +53,7 @@ func (ls *LocationServiceImplementation) Init() {
 	ls.locations = make(map[string]*models.Location)
 
 	for cursor.Next(ls.ctx) {
-		var locationMongoObject map[string]interface{}
-		if err = cursor.Decode(&locationMongoObject); err != nil {
-			fmt.Println(err)
-		}
-
-		var locationObject *models.Location
-		var locationName string
-		switch locationMongoObject[locationType] {
-		case city:
-			var cityObj models.City
-			if err = mapstructure.Decode(locationMongoObject, &cityObj); err != nil {
-				fmt.Println(err)
-			}
-			locationObject = &models.Location{
-				LocationType: city,
-				Data:         cityObj,
-			}
-			locationName = cityObj.Name
-		case country:
-			var countryObj models.Country
-			if err = mapstructure.Decode(locationMongoObject, &countryObj); err != nil {
-				fmt.Println(err)
-			}
-			locationObject = &models.Location{
-				LocationType: country,
-				Data:         countryObj,
-			}
-			locationName = countryObj.Name
-		case state:
-			var stateObj models.State
-			if err = mapstructure.Decode(locationMongoObject, &stateObj); err != nil {
-				fmt.Println(err)
-			}
-			locationObject = &models.Location{
-				LocationType: state,
-				Data:         stateObj,
-			}
-			locationName = stateObj.Name
-		}
+		locationObject, locationName := ls.extractLocation(cursor)
 
 		ls.locations[locationName] = locationObject
 	}
@@ -100,8 +65,41 @@ func (ls *LocationServiceImplementation) Init() {
 	fmt.Println("loaded locations")
 }
 
-func (ls LocationServiceImplementation) GetLocation() (*models.Location, error) {
-	return nil, nil
+func (ls *LocationServiceImplementation) extractLocation(cursor *mongo.Cursor) (*models.Location, string) {
+	var locationMongoObject map[string]interface{}
+	if err := cursor.Decode(&locationMongoObject); err != nil {
+		fmt.Println(err)
+	}
+
+	mongoId := locationMongoObject["_id"].(primitive.ObjectID)
+	var locationObject *models.Location
+	var locationName string
+	switch locationMongoObject[locationType] {
+	case city:
+		return extractCityNameAndLocation(locationMongoObject, locationObject, locationName, mongoId)
+	case country:
+		return extractCountryNameAndLocation(locationMongoObject, locationObject, locationName, mongoId)
+	case state:
+		return extractStateNameAndLocation(locationMongoObject, locationObject, locationName, mongoId)
+	}
+	return locationObject, locationName
+}
+
+func (ls LocationServiceImplementation) GetLocation(mongoIdHex string) (*models.Location, error) {
+	objectID, _ := primitive.ObjectIDFromHex(mongoIdHex)
+	filter := bson.M{"_id": objectID}
+	result := ls.locationsCollection.FindOne(ls.ctx, filter)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	var locationMongoObject map[string]interface{}
+	if err := result.Decode(&locationMongoObject); err != nil {
+		return nil, err
+	}
+
+	//convert to models.location
+	return convertToLocation(locationMongoObject), nil
 }
 
 func (ls LocationServiceImplementation) GetLocationsAutoComplete(term string) []*models.AutocompleteOption {
@@ -112,6 +110,7 @@ func (ls LocationServiceImplementation) GetLocationsAutoComplete(term string) []
 		locationName = strings.ToLower(locationName)
 		if strings.HasPrefix(locationName, term) {
 			autocompleteOption := &models.AutocompleteOption{
+				Id:           extractMongoId(location),
 				Name:         locationName,
 				LocationType: location.LocationType,
 				Country:      getCountryName(location.Data, location.LocationType),

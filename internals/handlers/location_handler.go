@@ -15,13 +15,13 @@ func NewLocationHandler(locationService services.LocationService) LocationHandle
 }
 
 func (h LocationHandler) GetLocation(ctx *fiber.Ctx) error {
-	locations, err := h.locationService.GetLocation()
+	mongoIdHex := ctx.Query("hex")
+	location, err := h.locationService.GetLocation(mongoIdHex)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Println(locations)
-	return ctx.SendString("get locations")
+	return ctx.JSON(location)
 }
 
 func (h LocationHandler) GetLocationsAutoComplete(ctx *fiber.Ctx) error {

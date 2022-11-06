@@ -80,6 +80,7 @@ type Location struct {
 }
 
 type AutocompleteOption struct {
+	Id           string `json:"id"`
 	Name         string `json:"name"`
 	LocationType string `json:"locationType"`
 	Country      string `json:"country"`
