@@ -5,8 +5,10 @@ import (
 	"eztravel-wh/internals/handlers"
 	"eztravel-wh/internals/routes"
 	"eztravel-wh/internals/services"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
+	"os"
 )
 
 var (
@@ -37,6 +39,8 @@ func (s Server) Init() {
 }
 
 func (s Server) StartServer() {
+	port := os.Getenv("PORT")
+
 	s.Init()
 	app := fiber.New()
 	api := app.Group("/api")
@@ -46,5 +50,5 @@ func (s Server) StartServer() {
 	})
 
 	locationRouter.LocationRoute(api)
-	app.Listen(":3000")
+	app.Listen(fmt.Sprintf(":%s", port))
 }
