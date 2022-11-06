@@ -7,7 +7,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"strings"
 )
 
@@ -39,11 +38,9 @@ func NewLocationService(locationsCollection *mongo.Collection, ctx context.Conte
 }
 
 func (ls *LocationServiceImplementation) Init() {
-	findOptions := options.FindOptions{}
-	opt := *findOptions.SetLimit(100)
 	query := bson.M{}
 
-	cursor, err := ls.locationsCollection.Find(ls.ctx, query, &opt)
+	cursor, err := ls.locationsCollection.Find(ls.ctx, query)
 	if err != nil {
 		fmt.Println(err)
 	}
