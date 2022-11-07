@@ -19,5 +19,6 @@ func (lrc LocationRouteController) LocationRoute(router fiber.Router) {
 	locationRouter := router.Group("/location")
 
 	locationRouter.Get("/autocomplete", lrc.locationHander.GetLocationsAutoComplete)
-	locationRouter.Get("/", lrc.locationHander.GetLocation)
+	locationRouter.Get("/:hex", lrc.locationHander.GetLocation)
+	locationRouter.Get("/", lrc.locationHander.GetLocations)
 }

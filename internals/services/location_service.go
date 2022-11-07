@@ -20,6 +20,7 @@ const (
 
 type LocationService interface {
 	GetLocation(string) (*models.Location, error)
+	GetLocations() []*models.Location
 	GetLocationsAutoComplete(string) []*models.AutocompleteOption
 	Init()
 }
@@ -60,6 +61,15 @@ func (ls *LocationServiceImplementation) Init() {
 	}
 
 	fmt.Println("loaded locations")
+}
+
+func (ls *LocationServiceImplementation) GetLocations() []*models.Location {
+	var locations []*models.Location
+	for _, location := range ls.locations {
+		locations = append(locations, location)
+	}
+
+	return locations
 }
 
 func (ls *LocationServiceImplementation) extractLocation(cursor *mongo.Cursor) (*models.Location, string) {
