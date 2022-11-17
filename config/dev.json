@@ -1,0 +1,8 @@
+{
+  "mongo_uri": "mongodb+srv://admin:admin@cluster0.odfya.mongodb.net/?retryWrites=true&w=majority",
+  "port": "3000",
+  "unsplash": {
+    "access_key": "zTw8cpuIjn6b0EPresx6dL-Woeox_Tqtxzv8morAxqk",
+    "secret_key": "TRA6tbi6LBlbVEBsprVCP9WGAeAo-WL1NMsd-7JFpw8"
+  }
+}

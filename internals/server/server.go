@@ -15,6 +15,10 @@ var (
 	locationService services.LocationService
 	locationHandler handlers.LocationHandler
 	locationRouter  routes.LocationRouteController
+
+	imagesService services.ImagesService
+	imagesHandler handlers.ImagesHandler
+	imagesRouter  routes.ImagesRouteController
 )
 
 type Server struct {
@@ -50,5 +54,6 @@ func (s Server) StartServer() {
 	})
 
 	locationRouter.LocationRoute(api)
+	imagesRouter.ImagesRoute(api)
 	app.Listen(fmt.Sprintf(":%s", port))
 }
