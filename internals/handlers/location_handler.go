@@ -31,6 +31,7 @@ func (h LocationHandler) GetLocations(ctx *fiber.Ctx) error {
 	return ctx.JSON(locations)
 }
 
+// GetLocationsAutoComplete get the location autocomplete options
 func (h LocationHandler) GetLocationsAutoComplete(ctx *fiber.Ctx) error {
 	term := ctx.Query("term")
 	if strings.Trim(term, " ") == "" {
